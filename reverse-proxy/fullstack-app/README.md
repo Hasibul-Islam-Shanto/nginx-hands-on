@@ -7,88 +7,93 @@ A distributed Todo & Workflow Management application built with **React.js**, **
 ## Architecture Overview
 
 ```
-+--------------------------------------------------------------+
-| React 18 Single Page App (Vite on :5173)                     |
-|  - Plus Jakarta Sans + Fira Code typography                  |
-|  - Dark emerald glassmorphic cards and ambient glow          |
-|  - Live MongoDB & backend status badge                       |
-+------------------------------+-------------------------------+
-                               |
-                               | Reverse proxy / HTTP (:5001)
-                               v
-+--------------------------------------------------------------+
-| Node.js Express REST API (:5001)                             |
-|  - Full CRUD endpoints: /api/todos                           |
-|  - Health & Diagnostics endpoint: /api/health                |
-|  - Mongoose ODM Data Layer                                   |
-+------------------------------+-------------------------------+
-                               |
-                               | Mongoose TCP (:27017)
-                               v
-+--------------------------------------------------------------+
-| MongoDB 7.0 (Docker Container: fullstack-mongodb)            |
-|  - Running in Docker Compose                                 |
-|  - Volume: fullstack_mongodb_data (persistent data storage)  |
-+--------------------------------------------------------------+
++---------------------------------------------------------------------------------+
+| Browser (User)                                                                  |
+|   Visiting: http://localhost:5173                                               |
++---------------------------------------------------------------------------------+
+                                       |
+                                       v
++---------------------------------------------------------------------------------+
+| Frontend Container (fullstack-frontend:80 mapped to :5173)                      |
+|  - Multi-stage build (Vite React bundle + Alpine NGINX web server)              |
+|  - Serves static assets with client-side SPA fallback                           |
+|  - Reverse-proxies /api/ requests directly to http://backend:5001/api/          |
++---------------------------------------------------------------------------------+
+                                       |
+                       Docker Network (fullstack-network)
+                                       v
++---------------------------------------------------------------------------------+
+| Backend Container (fullstack-backend:5001 mapped to :5001)                      |
+|  - Node.js 20 Alpine with Express REST API                                      |
+|  - Endpoints: /api/todos, /api/health, /api/todos/stats                         |
+|  - Mongoose ODM connecting to mongodb:27017                                     |
++---------------------------------------------------------------------------------+
+                                       |
+                       Docker Network (fullstack-network)
+                                       v
++---------------------------------------------------------------------------------+
+| Database Container (fullstack-mongodb:27017 mapped to :27017)                   |
+|  - Official Mongo 7.0 daemon                                                    |
+|  - Persistent storage volume: fullstack_mongodb_data                            |
++---------------------------------------------------------------------------------+
 ```
 
 ---
 
-## 1. Prerequisites & Services
+## 1. Quick Start: Run Everything with Docker Compose
 
-### MongoDB via Docker
-The MongoDB database runs via Docker Compose:
+To build and start all three tiers (Database, Backend API, and Frontend with NGINX):
+
 ```bash
-# Start MongoDB in the background
-docker compose up -d
+cd reverse-proxy/fullstack-app
 
-# Check container status
-docker ps --filter "name=fullstack-mongodb"
+# Build and start all services in the background
+docker compose up -d --build
 
-# View logs
-docker compose logs -f mongodb
+# Verify running containers
+docker compose ps
 
-# Stop MongoDB
+# View live logs
+docker compose logs -f
+```
+
+- **Frontend UI:** [http://localhost:5173](http://localhost:5173)
+- **Backend API:** [http://localhost:5001/api/health](http://localhost:5001/api/health)
+- **MongoDB:** `localhost:27017`
+
+To shut down the stack:
+```bash
 docker compose down
 ```
 
 ---
 
-## 2. Running Backend (Node.js & Express)
+## 2. Local Development Without Full Containers
+
+If you only want MongoDB in Docker while editing code locally:
 
 ```bash
-cd backend
-npm install
+cd reverse-proxy/fullstack-app
+
+# 1. Start MongoDB only
+docker compose up -d mongodb
+
+# 2. Run both frontend and backend concurrently in watch mode
 npm run dev
 ```
-Backend runs on: `http://localhost:5001`
-- Diagnostics: `http://localhost:5001/api/health`
-- Todos API: `http://localhost:5001/api/todos`
+
+Or run them in separate terminals:
+```bash
+npm run server   # Node.js backend with watch mode (:5001)
+npm run client   # React Vite dev server (:5173)
+```
 
 ---
 
-## 3. Running Frontend (React & Vite)
+## 3. Container Details
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
-Frontend runs on: `http://localhost:5173`
-- Configured with Vite proxy forwarding `/api` requests to backend on port `5001`.
-
----
-
-## API Reference
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/health` | System health check (MongoDB connection status & RAM) |
-| `GET` | `/api/todos` | List all tasks with optional filters (`status`, `category`, `search`) |
-| `GET` | `/api/todos/stats` | Aggregated metrics (total, active, completed, high priority) |
-| `POST` | `/api/todos` | Create a new task |
-| `PATCH` | `/api/todos/:id` | Update task title, description, category, priority, completed |
-| `DELETE` | `/api/todos/:id` | Delete task by ID |
-| `POST` | `/api/todos/seed` | Seed initial development workflow tasks |
-| `DELETE` | `/api/todos/bulk/completed` | Clear all completed tasks |
-| `PATCH` | `/api/todos/bulk/toggle-all` | Mark all tasks completed or active |
+| Container Name | Service | Base Image | Internal Port | Host Port | Role |
+|---|---|---|---|---|---|
+| `fullstack-frontend` | `frontend` | `nginx:alpine` | `80` | `5173` | Serves compiled React app & proxies `/api/` |
+| `fullstack-backend` | `backend` | `node:20-alpine` | `5001` | `5001` | Express REST API & Mongoose |
+| `fullstack-mongodb` | `mongodb` | `mongo:7.0` | `27017` | `27017` | Persistent document storage |

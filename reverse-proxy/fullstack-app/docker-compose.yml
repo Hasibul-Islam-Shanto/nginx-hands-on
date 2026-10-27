@@ -9,6 +9,42 @@ services:
       MONGO_INITDB_DATABASE: tododb
     volumes:
       - mongodb_data:/data/db
+    networks:
+      - fullstack-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fullstack-backend
+    restart: always
+    ports:
+      - "5001:5001"
+    environment:
+      PORT: 5001
+      MONGODB_URI: mongodb://mongodb:27017/tododb
+      CORS_ORIGIN: "*"
+    depends_on:
+      - mongodb
+    networks:
+      - fullstack-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: fullstack-frontend
+    restart: always
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - fullstack-network
+
+networks:
+  fullstack-network:
+    name: fullstack_network
 
 volumes:
   mongodb_data:

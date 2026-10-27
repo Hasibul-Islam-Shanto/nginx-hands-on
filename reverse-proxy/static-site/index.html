@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NGINX — High Performance Web Server & Reverse Proxy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #080c0a;
+      --bg-card: rgba(13, 23, 18, 0.7);
+      --bg-card-hover: rgba(18, 35, 27, 0.85);
+      --border-subtle: rgba(16, 185, 129, 0.15);
+      --border-glow: rgba(52, 211, 153, 0.4);
+      --primary-green: #009639;
+      --accent-mint: #10b981;
+      --accent-lime: #34d399;
+      --text-main: #f0fdf4;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --code-bg: #050a07;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.6;
+      background-image: 
+        radial-gradient(circle at 15% 20%, rgba(0, 150, 57, 0.18) 0%, transparent 45%),
+        radial-gradient(circle at 85% 65%, rgba(16, 185, 129, 0.14) 0%, transparent 50%),
+        radial-gradient(circle at 50% 90%, rgba(52, 211, 153, 0.08) 0%, transparent 40%);
+      background-attachment: fixed;
+    }
+
+    /* Ambient Glow & Grid */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-size: 40px 40px;
+      background-image: 
+        linear-gradient(to right, rgba(16, 185, 129, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(16, 185, 129, 0.03) 1px, transparent 1px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header & Navigation */
+    header {
+      padding: 28px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(16, 185, 129, 0.1);
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .logo-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, #009639 0%, #10b981 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 24px rgba(0, 150, 57, 0.5);
+    }
+
+    .logo-icon svg {
+      width: 22px;
+      height: 22px;
+      fill: #ffffff;
+    }
+
+    .logo-text {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      background: linear-gradient(to right, #ffffff, #86efac);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #6ee7b7;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+      }
+      70% {
+        box-shadow: 0 0 0 8px rgba(52, 211, 153, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0);
+      }
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 80px 0 60px;
+      text-align: center;
+    }
+
+    .hero-tagline {
+      display: inline-block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #34d399;
+      margin-bottom: 16px;
+      background: rgba(16, 185, 129, 0.12);
+      padding: 6px 16px;
+      border-radius: 9999px;
+      border: 1px solid rgba(52, 211, 153, 0.2);
+    }
+
+    .hero-title {
+      font-size: clamp(2.4rem, 5vw, 4rem);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #6ee7b7 0%, #10b981 50%, #009639 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 1.15rem;
+      max-width: 680px;
+      margin: 0 auto 36px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .hero-stats {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      flex-wrap: wrap;
+      margin-top: 40px;
+    }
+
+    .stat-pill {
+      background: rgba(13, 23, 18, 0.6);
+      border: 1px solid var(--border-subtle);
+      padding: 16px 24px;
+      border-radius: 14px;
+      min-width: 170px;
+      backdrop-filter: blur(12px);
+    }
+
+    .stat-num {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #6ee7b7;
+    }
+
+    .stat-label {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      font-weight: 500;
+      margin-top: 4px;
+    }
+
+    /* Section Headers */
+    .section-title {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      letter-spacing: -0.01em;
+    }
+
+    .section-sub {
+      color: var(--text-muted);
+      font-size: 1rem;
+      margin-bottom: 40px;
+      max-width: 600px;
+    }
+
+    /* Cards Grid */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      margin-bottom: 70px;
+    }
+
+    .glass-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 28px;
+      backdrop-filter: blur(16px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .glass-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #10b981, transparent);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .glass-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-glow);
+      transform: translateY(-4px);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4), 0 0 20px rgba(16, 185, 129, 0.15);
+    }
+
+    .glass-card:hover::before {
+      opacity: 1;
+    }
+
+    .card-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      color: #34d399;
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #f1f5f9;
+    }
+
+    .card-desc {
+      font-size: 0.94rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* Architecture Comparison Section */
+    .arch-section {
+      background: linear-gradient(180deg, rgba(13, 23, 18, 0.5) 0%, rgba(8, 12, 10, 0.8) 100%);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 70px;
+      backdrop-filter: blur(14px);
+    }
+
+    .arch-flex {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 32px;
+      margin-top: 24px;
+    }
+
+    .arch-box {
+      background: rgba(5, 10, 7, 0.6);
+      border: 1px solid rgba(16, 185, 129, 0.15);
+      border-radius: 14px;
+      padding: 24px;
+    }
+
+    .arch-box.highlight {
+      border-color: rgba(52, 211, 153, 0.4);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .arch-box-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .arch-badge-green {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    .arch-list {
+      list-style: none;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .arch-list li {
+      margin-bottom: 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .arch-list li::before {
+      content: '✓';
+      color: #34d399;
+      font-weight: bold;
+    }
+
+    /* Configuration Code Block */
+    .code-section {
+      margin-bottom: 70px;
+    }
+
+    .code-wrapper {
+      background: var(--code-bg);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .code-header {
+      background: rgba(13, 23, 18, 0.9);
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(16, 185, 129, 0.15);
+    }
+
+    .code-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .dot-red { background: #ef4444; opacity: 0.8; }
+    .dot-yellow { background: #eab308; opacity: 0.8; }
+    .dot-green { background: #22c55e; opacity: 0.8; }
+
+    .code-filename {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.82rem;
+      color: #94a3b8;
+    }
+
+    .copy-btn {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      color: #6ee7b7;
+      font-size: 0.75rem;
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+
+    .copy-btn:hover {
+      background: rgba(16, 185, 129, 0.3);
+      color: #ffffff;
+    }
+
+    pre {
+      padding: 24px;
+      overflow-x: auto;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.88rem;
+      line-height: 1.65;
+      color: #cbd5e1;
+    }
+
+    .kwd { color: #f472b6; }     /* Keyword */
+    .dir { color: #38bdf8; }     /* Directive */
+    .var { color: #34d399; }     /* Green Accent Variable */
+    .val { color: #fde047; }     /* Value */
+    .com { color: #64748b; font-style: italic; } /* Comment */
+
+    /* CLI Cheatsheet */
+    .commands-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 80px;
+    }
+
+    .command-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 16px 20px;
+    }
+
+    .command-code {
+      font-family: 'Fira Code', monospace;
+      color: #6ee7b7;
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .command-desc {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid rgba(16, 185, 129, 0.12);
+      padding: 32px 0 48px;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 0.88rem;
+    }
+
+    footer p span {
+      color: #34d399;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <a href="#" class="logo-container">
+        <div class="logo-icon">
+          <!-- Nginx Minimalist N Logo Icon -->
+          <svg viewBox="0 0 24 24">
+            <path d="M4 3h3.5l9 12.5V3H20v18h-3.5L7.5 8.5V21H4V3z"/>
+          </svg>
+        </div>
+        <span class="logo-text">NGINX</span>
+      </a>
+
+      <div class="status-badge">
+        <span class="pulse-dot"></span>
+        <span>Static Site Served via NGINX</span>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-tagline">Web Architecture & Reverse Proxy</div>
+      <h1 class="hero-title">
+        High Performance Engine for the <br>
+        <span class="gradient-text">Modern Internet</span>
+      </h1>
+      <p class="hero-desc">
+        NGINX (pronounced "engine-x") is a premier asynchronous, open-source web server, reverse proxy, load balancer, and HTTP cache designed for maximum concurrency and ultra-low memory footprints.
+      </p>
+
+      <div class="hero-stats">
+        <div class="stat-pill">
+          <div class="stat-num">30%+</div>
+          <div class="stat-label">Top 10M Websites Powered</div>
+        </div>
+        <div class="stat-pill">
+          <div class="stat-num">C10K+</div>
+          <div class="stat-label">Concurrent Connections</div>
+        </div>
+        <div class="stat-pill">
+          <div class="stat-num">&lt; 5MB</div>
+          <div class="stat-label">Lightweight Base RAM Usage</div>
+        </div>
+        <div class="stat-pill">
+          <div class="stat-num">sub-ms</div>
+          <div class="stat-label">Static File Serving Latency</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Key Capabilities Section -->
+    <section>
+      <h2 class="section-title">Core Capabilities</h2>
+      <p class="section-sub">Why engineers worldwide make NGINX their first choice for web infrastructure.</p>
+
+      <div class="cards-grid">
+        <div class="glass-card">
+          <div class="card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+          </div>
+          <h3 class="card-title">Reverse Proxying</h3>
+          <p class="card-desc">
+            Directs incoming client requests seamlessly to one or multiple backend upstream services, hiding your application servers from direct exposure and enhancing network security.
+          </p>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="8.5" cy="7.5" r="4"></circle>
+              <line x1="20" y1="8" x2="20" y2="14"></line>
+              <line x1="23" y1="11" x2="17" y2="11"></line>
+            </svg>
+          </div>
+          <h3 class="card-title">Load Balancing</h3>
+          <p class="card-desc">
+            Distributes traffic across pools of microservices using algorithms such as Round Robin, Least Connections, and IP Hash to maximize throughput and eliminate bottlenecks.
+          </p>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+          <h3 class="card-title">SSL/TLS Termination</h3>
+          <p class="card-desc">
+            Offloads computationally expensive cryptographic handshakes at the edge. Centralizes SSL certificate rotation, HTTP/2 & HTTP/3 multiplexing, and security headers.
+          </p>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+          </div>
+          <h3 class="card-title">Static Asset Caching</h3>
+          <p class="card-desc">
+            Leverages zero-copy Linux syscalls (<code>sendfile</code>) to deliver images, HTML, CSS, and JS bundles directly from disk cache to the network socket with near-zero CPU overhead.
+          </p>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+          </div>
+          <h3 class="card-title">DDoS & Rate Limiting</h3>
+          <p class="card-desc">
+            Built-in leaky bucket rate limiting zones, IP blacklisting, connection throttling, and request size filters protect your downstream infrastructure from abuse.
+          </p>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="4 17 10 11 4 5"></polyline>
+              <line x1="12" y1="19" x2="20" y2="19"></line>
+            </svg>
+          </div>
+          <h3 class="card-title">WebSocket & gRPC Support</h3>
+          <p class="card-desc">
+            Effortlessly manages long-lived bidirectional WebSocket tunnels and multiplexed HTTP/2 gRPC microservice communication channels without connection drops.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Architecture Breakdown -->
+    <section class="arch-section">
+      <h2 class="section-title">The Event-Driven Advantage</h2>
+      <p style="color: var(--text-muted); font-size: 0.95rem;">
+        Unlike traditional process-per-request or thread-per-request servers (such as classic Apache MPM), NGINX was designed from ground up with an asynchronous, non-blocking event-driven loop.
+      </p>
+
+      <div class="arch-flex">
+        <div class="arch-box highlight">
+          <div class="arch-box-title">
+            <span>NGINX (Event-Driven)</span>
+            <span class="arch-badge-green">High Efficiency</span>
+          </div>
+          <ul class="arch-list">
+            <li>Single Master Process manages worker processes</li>
+            <li>Workers run a single-threaded asynchronous epoll/kqueue loop</li>
+            <li>Handles 10,000+ concurrent requests per worker</li>
+            <li>Constant low memory consumption under heavy load</li>
+            <li>No costly OS thread context switching overhead</li>
+          </ul>
+        </div>
+
+        <div class="arch-box">
+          <div class="arch-box-title">
+            <span style="color: #94a3b8;">Traditional Servers (Threaded)</span>
+          </div>
+          <ul class="arch-list" style="opacity: 0.75;">
+            <li>Allocates a new dedicated process/thread per request</li>
+            <li>Significant RAM consumed per open connection</li>
+            <li>Degrades rapidly when hit with concurrency spikes</li>
+            <li>Heavy kernel context switching penalties</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Configuration Preview -->
+    <section class="code-section">
+      <h2 class="section-title">Sample Reverse Proxy Configuration</h2>
+      <p class="section-sub">A typical production snippet routing requests to static files and backend servers.</p>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-dots">
+            <div class="dot dot-red"></div>
+            <div class="dot dot-yellow"></div>
+            <div class="dot dot-green"></div>
+          </div>
+          <div class="code-filename">/etc/nginx/conf.d/default.conf</div>
+          <button class="copy-btn" id="copyBtn" onclick="copySnippet()">Copy Config</button>
+        </div>
+        <pre><code id="snippetCode"><span class="kwd">upstream</span> <span class="var">backend_cluster</span> {
+    <span class="dir">server</span> 127.0.0.1:3000;
+    <span class="dir">server</span> 127.0.0.1:3001;
+    <span class="dir">keepalive</span> 32;
+}
+
+<span class="kwd">server</span> {
+    <span class="dir">listen</span> 80;
+    <span class="dir">server_name</span> <span class="val">example.com www.example.com</span>;
+
+    <span class="com"># Serve Static Website Files</span>
+    <span class="kwd">location</span> / {
+        <span class="dir">root</span> <span class="val">/var/www/static-site</span>;
+        <span class="dir">index</span> <span class="val">index.html</span>;
+        <span class="dir">try_files</span> <span class="var">$uri</span> <span class="var">$uri</span>/ /index.html;
+    }
+
+    <span class="com"># Reverse Proxy API Traffic to Backend Cluster</span>
+    <span class="kwd">location</span> /api/ {
+        <span class="dir">proxy_pass</span> <span class="val">http://backend_cluster</span>;
+        <span class="dir">proxy_http_version</span> 1.1;
+        <span class="dir">proxy_set_header</span> Host <span class="var">$host</span>;
+        <span class="dir">proxy_set_header</span> X-Real-IP <span class="var">$remote_addr</span>;
+        <span class="dir">proxy_set_header</span> X-Forwarded-For <span class="var">$proxy_add_x_forwarded_for</span>;
+        <span class="dir">proxy_set_header</span> X-Forwarded-Proto <span class="var">$scheme</span>;
+    }
+}</code></pre>
+      </div>
+    </section>
+
+    <!-- Essential CLI Commands -->
+    <section>
+      <h2 class="section-title">Quick CLI Cheatsheet</h2>
+      <p class="section-sub">Standard commands to manage and reload your NGINX daemon.</p>
+
+      <div class="commands-grid">
+        <div class="command-card">
+          <div class="command-code">nginx -t</div>
+          <div class="command-desc">Test configuration syntax for errors before reloading.</div>
+        </div>
+        <div class="command-card">
+          <div class="command-code">nginx -s reload</div>
+          <div class="command-desc">Hot-reload config with zero dropped connections or downtime.</div>
+        </div>
+        <div class="command-card">
+          <div class="command-code">brew services start nginx</div>
+          <div class="command-desc">Start NGINX as a background service via Homebrew.</div>
+        </div>
+        <div class="command-card">
+          <div class="command-code">nginx -s quit</div>
+          <div class="command-desc">Graceful shutdown allowing active connections to complete.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <p>Crafted for <span>NGINX</span> Reverse Proxy Demonstration • Static Site Served Successfully</p>
+    </footer>
+  </div>
+
+  <script>
+    function copySnippet() {
+      const code = document.getElementById('snippetCode').innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        const btn = document.getElementById('copyBtn');
+        btn.textContent = 'Copied!';
+        btn.style.background = 'rgba(52, 211, 153, 0.4)';
+        btn.style.color = '#ffffff';
+        setTimeout(() => {
+          btn.textContent = 'Copy Config';
+          btn.style.background = 'rgba(16, 185, 129, 0.15)';
+          btn.style.color = '#6ee7b7';
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>

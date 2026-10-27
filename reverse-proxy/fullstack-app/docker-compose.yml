@@ -1,0 +1,15 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: fullstack-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: tododb
+    volumes:
+      - mongodb_data:/data/db
+
+volumes:
+  mongodb_data:
+    name: fullstack_mongodb_data

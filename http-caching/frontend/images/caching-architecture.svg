@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 240" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="240" rx="16" fill="url(#bgGrad)" stroke="#1e293b" stroke-width="2"/>
+
+  <!-- Client Box -->
+  <g transform="translate(40, 50)">
+    <rect width="180" height="140" rx="12" fill="#1e293b" stroke="#38bdf8" stroke-width="2" />
+    <circle cx="90" cy="45" r="22" fill="#0284c7" opacity="0.3"/>
+    <text x="90" y="52" font-family="system-ui, sans-serif" font-size="20" text-anchor="middle" fill="#38bdf8">💻</text>
+    <text x="90" y="95" font-family="system-ui, sans-serif" font-size="14" font-weight="700" text-anchor="middle" fill="#f8fafc">Client / Browser</text>
+    <text x="90" y="118" font-family="system-ui, sans-serif" font-size="11" text-anchor="middle" fill="#94a3b8">Browser Assets Cache</text>
+  </g>
+
+  <!-- Arrows 1: Client <-> Nginx -->
+  <path d="M 230 100 L 310 100" stroke="#38bdf8" stroke-width="3" stroke-dasharray="6,4" marker-end="url(#arrow)" />
+  <path d="M 310 130 L 230 130" stroke="#10b981" stroke-width="3" />
+  <text x="270" y="90" font-family="system-ui, sans-serif" font-size="10" font-weight="600" text-anchor="middle" fill="#38bdf8">Request</text>
+  <text x="270" y="150" font-family="system-ui, sans-serif" font-size="10" font-weight="600" text-anchor="middle" fill="#10b981">1ms (HIT)</text>
+
+  <!-- NGINX Box -->
+  <g transform="translate(320, 30)">
+    <rect width="210" height="175" rx="14" fill="#064e3b" stroke="#10b981" stroke-width="2.5" filter="url(#glow)"/>
+    <rect width="210" height="175" rx="14" fill="#042f2e" stroke="#10b981" stroke-width="2"/>
+    <rect x="25" y="18" width="160" height="28" rx="6" fill="#065f46"/>
+    <text x="105" y="37" font-family="system-ui, sans-serif" font-size="13" font-weight="800" text-anchor="middle" fill="#34d399">NGINX REVERSE PROXY</text>
+    
+    <!-- Proxy Cache Disk Storage -->
+    <rect x="25" y="60" width="160" height="90" rx="8" fill="#0f172a" stroke="#10b981" stroke-width="1.5"/>
+    <text x="105" y="85" font-family="system-ui, sans-serif" font-size="12" font-weight="700" text-anchor="middle" fill="#10b981">⚡ proxy_cache Zone</text>
+    <text x="105" y="105" font-family="monospace" font-size="10" text-anchor="middle" fill="#6ee7b7">TTL: 15s | Memory: 10M</text>
+    <text x="105" y="125" font-family="system-ui, sans-serif" font-size="10" font-weight="600" text-anchor="middle" fill="#cbd5e1">X-Cache: HIT / MISS</text>
+    <text x="105" y="140" font-family="monospace" font-size="9" text-anchor="middle" fill="#94a3b8">Bypass: $http_cache_bypass</text>
+  </g>
+
+  <!-- Arrows 2: Nginx <-> Backend -->
+  <path d="M 540 100 L 610 100" stroke="#f59e0b" stroke-width="3" stroke-dasharray="6,4" />
+  <path d="M 610 130 L 540 130" stroke="#f59e0b" stroke-width="3" />
+  <text x="575" y="90" font-family="system-ui, sans-serif" font-size="10" font-weight="600" text-anchor="middle" fill="#f59e0b">On MISS</text>
+  <text x="575" y="150" font-family="system-ui, sans-serif" font-size="10" font-weight="600" text-anchor="middle" fill="#f59e0b">~350ms</text>
+
+  <!-- Backend Box -->
+  <g transform="translate(620, 50)">
+    <rect width="140" height="140" rx="12" fill="#1e293b" stroke="#f59e0b" stroke-width="2" />
+    <circle cx="70" cy="45" r="22" fill="#d97706" opacity="0.3"/>
+    <text x="70" y="52" font-family="system-ui, sans-serif" font-size="20" text-anchor="middle" fill="#fbbf24">⚙️</text>
+    <text x="70" y="95" font-family="system-ui, sans-serif" font-size="14" font-weight="700" text-anchor="middle" fill="#f8fafc">Node.js API</text>
+    <text x="70" y="118" font-family="system-ui, sans-serif" font-size="11" text-anchor="middle" fill="#94a3b8">Heavy DB Queries</text>
+  </g>
+</svg>
+

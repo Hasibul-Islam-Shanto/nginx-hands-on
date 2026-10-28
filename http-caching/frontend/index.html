@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NGINX HTTP Caching Lab (API & Assets)</title>
+  <link rel="icon" type="image/svg+xml" href="/images/logo.svg">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="logo-group">
+        <img src="/images/logo.svg" alt="NGINX Caching Logo" width="40" height="40">
+        <div>
+          <h1>NGINX HTTP Caching Lab</h1>
+          <p>Interactive demonstration of Server-Side API Caching &amp; Browser Asset Caching</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Architecture Diagram -->
+    <div class="hero-architecture">
+      <img src="/images/caching-architecture.svg" alt="NGINX Caching Architecture Flow">
+    </div>
+
+    <!-- Main Dashboard Grid -->
+    <div class="dashboard-grid">
+
+      <!-- Panel 1: Server-Side API Caching (proxy_cache) -->
+      <div class="card">
+        <h2>⚡ Server-Side API Caching</h2>
+        <p class="card-desc">
+          Test NGINX <code>proxy_cache</code> with simulated 350ms backend database queries.
+          Notice how subsequent requests drop to <strong>1ms</strong> without invoking the Node.js backend!
+        </p>
+
+        <!-- Controls -->
+        <div class="controls-row">
+          <button id="btnFetch" class="btn">🚀 Fetch /api/products</button>
+          <button id="btnBenchmark" class="btn btn-secondary">⚡ Run 10x Benchmark</button>
+          <label class="checkbox-label" title="Sends 'Cache-Bypass: 1' to force NGINX to re-fetch from Node.js">
+            <input type="checkbox" id="chkBypass">
+            <span>Bypass Cache</span>
+          </label>
+          <button id="btnReset" class="btn btn-secondary" style="margin-left: auto;" title="Reset Backend Counter">🔄 Reset</button>
+        </div>
+
+        <div class="progress-bar-container">
+          <div id="progressFill" class="progress-bar-fill"></div>
+        </div>
+
+        <!-- Metrics -->
+        <div class="metrics-row">
+          <div class="metric-box">
+            <div class="metric-label">Cache Status</div>
+            <div id="cacheStatus" class="badge badge-miss">CHECKING...</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-label">Response Time</div>
+            <div id="latency" class="metric-value">-- ms</div>
+          </div>
+          <div class="metric-box" title="How many times Node.js actually processed this endpoint">
+            <div class="metric-label">Backend Invocations</div>
+            <div id="backendHits" class="metric-value" style="color: var(--amber-primary);">0</div>
+          </div>
+        </div>
+
+        <!-- Terminal Logs -->
+        <div class="terminal-window" id="terminalLogs">
+          <div class="log-entry miss">
+            <span>[Init]</span> <span>Dashboard ready. Click "Fetch /api/products" to begin.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 2: Browser Static Asset Caching -->
+      <div class="card">
+        <h2>📦 Client / Browser Asset Caching</h2>
+        <p class="card-desc">
+          NGINX injects <code>Cache-Control</code> and <code>Expires</code> headers to instruct browsers and CDNs to store static files locally for 7 days.
+        </p>
+
+        <table class="asset-table">
+          <thead>
+            <tr>
+              <th>Asset</th>
+              <th>Type</th>
+              <th>Cache-Control Header</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>/css/style.css</code></td>
+              <td>Stylesheet</td>
+              <td id="asset-cssstylecss">Checking...</td>
+            </tr>
+            <tr>
+              <td><code>/js/app.js</code></td>
+              <td>Script</td>
+              <td id="asset-jsappjs">Checking...</td>
+            </tr>
+            <tr>
+              <td><code>/images/logo.svg</code></td>
+              <td>Vector Icon</td>
+              <td id="asset-imageslogosvg">Checking...</td>
+            </tr>
+            <tr>
+              <td><code>/</code> (HTML)</td>
+              <td>Page Document</td>
+              <td><code>no-cache, must-revalidate</code></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style="margin-top: 1.5rem; padding: 1rem; background: #0f172a; border-radius: 8px; border-left: 3px solid var(--emerald-primary);">
+          <h4 style="font-size: 0.85rem; color: var(--emerald-primary); margin-bottom: 0.3rem;">💡 Pro Observation:</h4>
+          <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">
+            Open your browser's <strong>DevTools → Network tab</strong> and refresh.
+            Static files will show <code>(disk cache)</code> or <code>(memory cache)</code> with <strong>0 ms</strong> load time and <strong>0 bytes</strong> transferred!
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
+

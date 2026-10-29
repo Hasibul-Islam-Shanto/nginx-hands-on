@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: compression-nginx
+    restart: always
+    ports:
+      - "8081:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./users.json:/usr/share/nginx/html/users.json:ro
+
